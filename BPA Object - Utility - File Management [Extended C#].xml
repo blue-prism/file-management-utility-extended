@@ -1,0 +1,1014 @@
+﻿<process name="Utility - File Management [Extended C#]" version="1.0" bpversion="6.5.1.14401" narrative="Common utility for file IO...extending the Blue Prism Utility - File Management object" byrefcollection="true" type="object" runmode="Background" preferredid="7fef2eac-105b-4fba-8764-00a74c21733f">
+  <appdef>
+    <element name="Application Root">
+      <id>82c11407-43d1-4639-bb1a-7daf951945d4</id>
+      <type>Application</type>
+      <basetype>Application</basetype>
+      <datatype>unknown</datatype>
+      <diagnose>False</diagnose>
+    </element>
+  </appdef>
+  <view>
+    <camerax>0</camerax>
+    <cameray>21</cameray>
+    <zoom version="2">1.25</zoom>
+  </view>
+  <preconditions />
+  <endpoint narrative="" />
+  <subsheet subsheetid="332fe361-2dce-4907-8aea-27a336807b25" type="CleanUp" published="True">
+    <name>Clean Up</name>
+    <view>
+      <camerax>0</camerax>
+      <cameray>0</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
+  <subsheet subsheetid="bdfff7c5-0f75-410d-bc08-773a9a069e42" type="Normal" published="True">
+    <name>Delete Files</name>
+    <view>
+      <camerax>-131</camerax>
+      <cameray>50</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
+  <subsheet subsheetid="32cb28b8-a027-4236-ab5d-58664bb862a8" type="Normal" published="True">
+    <name>Parse Fixed Width Record</name>
+    <view>
+      <camerax>-44</camerax>
+      <cameray>28</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
+  <subsheet subsheetid="48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb" type="Normal" published="True">
+    <name>Parse Fixed Width File To Collection</name>
+    <view>
+      <camerax>-20</camerax>
+      <cameray>-76</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
+  <stage stageid="c0469860-e031-4bf3-89be-88cfa087b4b2" name="Start" type="Start">
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-60</displayx>
+    <displayy>-45</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>ff2959d1-effe-4057-83f7-ce9f48600e98</onsuccess>
+  </stage>
+  <stage stageid="ff2959d1-effe-4057-83f7-ce9f48600e98" name="End" type="End">
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-60</displayx>
+    <displayy>45</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="44c107de-1a51-499a-bf09-70ad27bb7ef9" name="Stage1" type="ProcessInfo">
+    <narrative>
+    </narrative>
+    <displayx>-240</displayx>
+    <displayy>-15</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <references>
+      <reference>System.Data.dll</reference>
+      <reference>System.Xml.dll</reference>
+      <reference>System.Drawing.dll</reference>
+      <reference>System.Xml.Linq.dll</reference>
+      <reference>System.Data.DataSetExtensions.dll</reference>
+      <reference>System.dll</reference>
+      <reference>System.Core.dll</reference>
+    </references>
+    <imports>
+      <import>System</import>
+      <import>System.Drawing</import>
+      <import>System.Data</import>
+      <import>System.IO</import>
+      <import>System.Linq</import>
+      <import>System.Text</import>
+      <import>System.Collections.Generic</import>
+    </imports>
+    <language>csharp</language>
+    <globalcode><![CDATA[]]></globalcode>
+    <code><![CDATA[public void LoopSubfolders(string path, string pattern, int numberOfDays, bool removeEmptyDirectories)
+{
+	foreach (string s in Directory.GetDirectories(path))
+	{
+		TraverseToEndOfPath(s, pattern, numberOfDays, removeEmptyDirectories);
+	}
+}
+
+private void TraverseToEndOfPath(string path, string pattern, int numberOfDays, bool removeEmptyDirectories)
+{
+	if (Directory.GetDirectories(path).Length == 0)
+	{
+		DeleteFiles(path, pattern, numberOfDays, removeEmptyDirectories);
+	}
+	else
+	{
+		LoopSubfolders(path, pattern, numberOfDays, removeEmptyDirectories);
+	}
+}
+
+public void DeleteFiles(string path, string pattern, int numberOfDays, bool removeEmptyDirectories)
+{
+	// get files based on pattern/filter and that have aged out
+	List<string> patterns = pattern.Split(',').ToList();
+	patterns.ForEach(
+		p =>
+		{
+			Directory.EnumerateFiles(path, p).ToList().ForEach(
+				f =>
+				{
+					FileInfo fi = new FileInfo(f);
+					if (fi.LastWriteTime <= DateTime.Now.AddDays(-numberOfDays))
+					{
+						fi.Delete();
+					}
+				});
+		});
+
+	// delete directory if removeEmptyDirectories is true AND it's actually empty
+	if (removeEmptyDirectories && Directory.GetFileSystemEntries(path).Length == 0)
+		Directory.Delete(path);
+}
+]]></code>
+  </stage>
+  <stage stageid="d33b7926-05fb-4420-8231-032294e6e98d" name="Clean Up" type="SubSheetInfo">
+    <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-240</displayx>
+    <displayy>-15</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="2f61bc43-605d-4332-903d-7c237b093568" name="Start" type="Start">
+    <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-60</displayx>
+    <displayy>-45</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>ecf1aa99-20a1-4e2d-9927-94f5777044c3</onsuccess>
+  </stage>
+  <stage stageid="ecf1aa99-20a1-4e2d-9927-94f5777044c3" name="End" type="End">
+    <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-60</displayx>
+    <displayy>60</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="cd49a2e9-2b67-4165-a239-dc0aaddfe14f" name="Note1" type="Note">
+    <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
+    <narrative>Clean Up Page
+
+This is an optional page where you might choose to perform some finalisation (or "cleanup") tasks as your business object is closed down.
+
+The cleanup action will be called automatically immediately after closing your business object at the end of a business process.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than before the disposal of the business object.</narrative>
+    <displayx>-240</displayx>
+    <displayy>135</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>180</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="8a8eb31e-077f-46a5-a0f4-0e504d174401" name="Note2" type="Note">
+    <narrative>Initialise Page
+
+This is an optional page where you might choose to perform some initialisation tasks after your business object is loaded.
+
+The initialise action will be called automatically immediately after loading your business object.
+
+You will not be able to call this action from a business process, nor will it be called at any other time than after the creation of the object.</narrative>
+    <displayx>-240</displayx>
+    <displayy>120</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>150</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="b529d184-6390-42c5-966b-6bc0cc7651e8" name="Parse Fixed Width File To Collection" type="SubSheetInfo">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <narrative>This action takes in a collection of strings, each representing a fixed-width record/line from a flat file. It also takes in a collection of column definitions (including name, start position, and length). Each record is parsed by calling the "Parse Fixed Width Record" action and subsequently added to a collection of parsed data to be returned to the caller.</narrative>
+    <displayx>-345</displayx>
+    <displayy>-270</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="9536b5ba-7b3e-4082-a7ff-426e017ff3a5" name="Start" type="Start">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-300</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="collection" name="ColumnDefinitions" narrative="Collection of column definitions; including column name, start position, and length" stage="ColumnDefinitions" />
+      <input type="collection" name="FixedWidthRecords" narrative="Collection of fixed width text records" stage="FixedWidthRecords" />
+    </inputs>
+    <onsuccess>d958a6f8-891c-467a-89c9-9ac6d69661d0</onsuccess>
+  </stage>
+  <stage stageid="5dce49aa-ab48-4618-9e02-1d3a9c7120ee" name="End" type="End">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>180</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <outputs>
+      <output type="collection" name="Data" narrative="Collection of records from the parsed text of the inbound fixed width collection" stage="Data" />
+      <output type="flag" name="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
+      <output type="text" name="Message" narrative="Output message for result of the action; primarily used for relaying exception message" stage="Message" />
+    </outputs>
+  </stage>
+  <stage stageid="ec3ead03-b401-47bf-887b-54c437d6ce99" name="Data" type="Collection">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>30</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="484efa86-191c-42c2-8064-0367439ded18" name="ColumnDefinitions" type="Collection">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-180</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+    <collectioninfo>
+      <field name="Name" type="text" description="Column name" />
+      <field name="StartPosition" type="number" description="Starting position of the column" />
+      <field name="Length" type="number" description="Length of the column" />
+    </collectioninfo>
+  </stage>
+  <stage stageid="f291b290-36fd-45a7-9e7f-f5ae56a589a2" name="Success" type="Data">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>60</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>flag</datatype>
+    <initialvalue>False</initialvalue>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="1ab72d58-b3ec-42b4-bb49-bca0d7229ad1" name="Message" type="Data">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>90</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="a32392c4-5498-4e1c-8dad-e9a2bea4cfd3" name="FixedWidthRecords" type="Collection">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-150</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+    <collectioninfo>
+      <field name="Value" type="text" />
+    </collectioninfo>
+  </stage>
+  <stage stageid="a3efd57c-426d-48c9-be84-4f158d21d462" name="Records Loop" type="LoopStart">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-135</displayy>
+    <displaywidth>120</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>701ddf06-dae0-47c8-b7bf-3eee021eddf2</onsuccess>
+    <groupid>787970b8-4738-48a2-8272-34f9d2971dfd</groupid>
+    <looptype>ForEach</looptype>
+    <loopdata>FixedWidthRecords</loopdata>
+  </stage>
+  <stage stageid="915a824e-aca9-44f6-8f8d-eb2cfee3efa3" name="Records Loop" type="LoopEnd">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>120</displayy>
+    <displaywidth>120</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>5dce49aa-ab48-4618-9e02-1d3a9c7120ee</onsuccess>
+    <groupid>787970b8-4738-48a2-8272-34f9d2971dfd</groupid>
+  </stage>
+  <stage stageid="3ac145c6-a918-4251-bfee-d8010f246a43" name="Success?" type="Decision">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>30</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <decision expression="[Success]" />
+    <ontrue>5375d859-aa42-4272-b185-cbeeea9c7a99</ontrue>
+    <onfalse>061e9b38-83a6-4140-980a-66b402555faa</onfalse>
+  </stage>
+  <stage stageid="061e9b38-83a6-4140-980a-66b402555faa" name="Note3" type="Note">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>Failure to parse a record -- stop processing and return</narrative>
+    <displayx>0</displayx>
+    <displayy>30</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>60</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="0000FF" />
+    <onsuccess>bd9c3e63-17d6-45e7-8551-edf3cd1f0747</onsuccess>
+  </stage>
+  <stage stageid="bd9c3e63-17d6-45e7-8551-edf3cd1f0747" name="Anchor1" type="Anchor">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>0</displayx>
+    <displayy>180</displayy>
+    <displaywidth>10</displaywidth>
+    <displayheight>10</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>5dce49aa-ab48-4618-9e02-1d3a9c7120ee</onsuccess>
+  </stage>
+  <stage stageid="1763463b-3420-4fae-8895-e54783e45ef3" name="Expected Record Length" type="Data">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-45</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>number</datatype>
+    <initialvalue>0</initialvalue>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="701ddf06-dae0-47c8-b7bf-3eee021eddf2" name="Record Length Match?" type="Decision">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-90</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <decision expression="Len([FixedWidthRecords.Value])=[Expected Record Length]" />
+    <ontrue>c66e1064-7ba8-41f0-8bf1-5c782083868f</ontrue>
+    <onfalse>a0c79786-ee84-4613-8d0e-93918b4f8494</onfalse>
+  </stage>
+  <stage stageid="a0c79786-ee84-4613-8d0e-93918b4f8494" name="Anchor2" type="Anchor">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-210</displayx>
+    <displayy>-90</displayy>
+    <displaywidth>10</displaywidth>
+    <displayheight>10</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>5ab0efb3-1a3b-4b2f-9eb3-d65492a64273</onsuccess>
+  </stage>
+  <stage stageid="5ab0efb3-1a3b-4b2f-9eb3-d65492a64273" name="Anchor3" type="Anchor">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-210</displayx>
+    <displayy>120</displayy>
+    <displaywidth>10</displaywidth>
+    <displayheight>10</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>915a824e-aca9-44f6-8f8d-eb2cfee3efa3</onsuccess>
+  </stage>
+  <stage stageid="e7eba386-35cf-4ec9-bb5a-1d4409be70f2" name="Parsed Record" type="Collection">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-75</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="5375d859-aa42-4272-b185-cbeeea9c7a99" name="Add Parsed Record to Data" type="Action">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>75</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="collection" name="Main Collection" narrative="The collection to append to." expr="[Data]" />
+      <input type="collection" name="Collection to Append" narrative="The collection to append." expr="[Parsed Record]" />
+    </inputs>
+    <outputs>
+      <output type="collection" name="Combined Collection" narrative="The combined collection." stage="Data" />
+    </outputs>
+    <onsuccess>915a824e-aca9-44f6-8f8d-eb2cfee3efa3</onsuccess>
+    <resource object="Utility - Collection Manipulation" action="Append Rows to Collection" />
+  </stage>
+  <stage stageid="d8f4fd51-dfb1-4d12-9aa9-d3aaea03c830" name="Success?" type="Decision">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-195</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <decision expression="[Success]" />
+    <ontrue>a3efd57c-426d-48c9-be84-4f158d21d462</ontrue>
+    <onfalse>e54b0dbf-8ec9-41c1-b380-b2e6979ef3ef</onfalse>
+  </stage>
+  <stage stageid="e54b0dbf-8ec9-41c1-b380-b2e6979ef3ef" name="Note4" type="Note">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>Problem calculating total record length</narrative>
+    <displayx>0</displayx>
+    <displayy>-195</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>60</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="0000FF" />
+    <onsuccess>33626ced-4196-474d-92a0-020bd97feebf</onsuccess>
+  </stage>
+  <stage stageid="33626ced-4196-474d-92a0-020bd97feebf" name="Anchor4" type="Anchor">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>90</displayx>
+    <displayy>-195</displayy>
+    <displaywidth>10</displaywidth>
+    <displayheight>10</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>abd23e80-614f-4b61-b839-7426bb63093e</onsuccess>
+  </stage>
+  <stage stageid="abd23e80-614f-4b61-b839-7426bb63093e" name="Anchor5" type="Anchor">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>90</displayx>
+    <displayy>180</displayy>
+    <displaywidth>10</displaywidth>
+    <displayheight>10</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <onsuccess>bd9c3e63-17d6-45e7-8551-edf3cd1f0747</onsuccess>
+  </stage>
+  <stage stageid="1ba7e3e9-bd21-4e92-8cac-fd93d3aaa593" name="Input Data Items" type="Block">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-450</displayx>
+    <displayy>-210</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
+  </stage>
+  <stage stageid="db75cfa4-4be5-4da2-b513-259fa3efdb67" name="Output Data Items" type="Block">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-450</displayx>
+    <displayy>0</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>120</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="800000" />
+  </stage>
+  <stage stageid="bbfbb63c-894a-4904-af4c-31ca367bfdc2" name="Local Data Items" type="Block">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-450</displayx>
+    <displayy>-105</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="339966" />
+  </stage>
+  <stage stageid="15e24bc9-9970-4018-9c1a-8cefdabdfbcd" name="Delete Files" type="SubSheetInfo">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>This action takes in a single folder path, a file extension pattern, and a number of days. It uses that data to delete all files that meet the file extension pattern and are older than the number of days. And then traverses all nested sub folders recursively to delete files in the same manner.</narrative>
+    <displayx>-345</displayx>
+    <displayy>-90</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="d4e6ba50-b525-4cba-8185-806249e36ba7" name="End" type="End">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>30</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <outputs>
+      <output type="flag" name="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
+      <output type="text" name="Message" narrative="Output message for result of the action; primarily used for relaying exception message" stage="Message" />
+    </outputs>
+  </stage>
+  <stage stageid="68ad89d7-8cb9-4237-800e-0ef452413c0c" name="Delete Files" type="Code">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>-45</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>60</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="startPath" expr="[File Path]" />
+      <input type="text" name="pattern" expr="[File Extension Pattern]" />
+      <input type="number" name="numberOfDays" expr="[Number of Days]" />
+      <input type="flag" name="removeEmptyDirectories" expr="[Remove Empty Directories]" />
+      <input type="flag" name="recursive" expr="[Recursively Delete In Subfolders]" />
+    </inputs>
+    <outputs>
+      <output type="flag" name="success" stage="Success" />
+      <output type="text" name="message" stage="Message" />
+    </outputs>
+    <onsuccess>d4e6ba50-b525-4cba-8185-806249e36ba7</onsuccess>
+    <code><![CDATA[success = true;
+message = string.Empty;
+
+try
+{
+	if (recursive)
+		LoopSubfolders(startPath, pattern, Convert.ToInt32(numberOfDays), removeEmptyDirectories);
+	else
+		DeleteFiles(startPath, pattern, Convert.ToInt32(numberOfDays), removeEmptyDirectories);
+}
+catch (Exception ex)
+{
+	success = false;
+	message = ex.Message;
+	}
+]]></code>
+  </stage>
+  <stage stageid="788a9601-6b8e-4453-90d8-d8238d9e88f3" name="Success" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>195</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>flag</datatype>
+    <initialvalue>False</initialvalue>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="8a2be339-bc5d-4f2e-a0a5-0594437e578f" name="Message" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>225</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="ba11d951-85f3-4ad4-a60f-988de466a7f7" name="Input Data Items" type="Block">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-450</displayx>
+    <displayy>-30</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>180</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
+  </stage>
+  <stage stageid="9dc30f7f-dcda-46a1-bd9c-078e6f31317f" name="Output Data Items" type="Block">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-450</displayx>
+    <displayy>165</displayy>
+    <displaywidth>210</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="800000" />
+  </stage>
+  <stage stageid="b3fbf6ae-846a-4253-88b2-b8222e097f60" name="Start" type="Start">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <preconditions>
+      <condition narrative="The folder path provided must be a valid path." />
+      <condition narrative="The file extension pattern must be a valid string pattern (For example: *.*  or  *.csv; etc.). Multiple patterns may be used but must be comma delimited (For example: *.csv,*.txt)." />
+      <condition narrative="The number of days must a valid number." />
+    </preconditions>
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>-120</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="File Path" stage="File Path" />
+      <input type="number" name="Number of Days" stage="Number of Days" />
+      <input type="text" name="File Extension Pattern" stage="File Extension Pattern" />
+      <input type="flag" name="Remove Empty Directories" stage="Remove Empty Directories" />
+      <input type="flag" name="Recursively Delete In Subfolders" stage="Recursively Delete In Subfolders" />
+    </inputs>
+    <onsuccess>68ad89d7-8cb9-4237-800e-0ef452413c0c</onsuccess>
+  </stage>
+  <stage stageid="6dc825ab-9c3a-4f32-88bd-6ec986491e66" name="File Path" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>0</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="8c678857-124d-489f-a2ca-2917a7517452" name="Number of Days" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>30</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>number</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="541f447f-918b-447b-b06c-694c41b292e3" name="File Extension Pattern" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>60</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="fda69089-bcc5-4e6d-ad8b-d6afa3618804" name="Remove Empty Directories" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>90</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>flag</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="35c85f44-d2d7-4304-b82f-9412d2700c91" name="Recursively Delete In Subfolders" type="Data">
+    <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>120</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>flag</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="a70c72a1-c8be-4d3a-893e-dc795d0d1884" name="Parse Fixed Width Record" type="SubSheetInfo">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <narrative>This action takes in a collection of column definitions (including name, start position, and length) and a string. The column definitions are used to create a single record collection and the start &amp; length for each is used to parse the value from the input string.</narrative>
+    <displayx>-330</displayx>
+    <displayy>-105</displayy>
+    <displaywidth>180</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+  </stage>
+  <stage stageid="08d08e3b-ac7e-432a-beaa-18ee2edb4e18" name="Start" type="Start">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>-135</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="RecordText" narrative="String containing all text from a given file record" stage="RecordText" />
+      <input type="collection" name="ColumnDefinitions" narrative="Collection of column definitions; including column name, start position, and length" stage="ColumnDefinitions" />
+    </inputs>
+    <onsuccess>2aa63a8b-7c69-4bc4-8564-a7842df22a9f</onsuccess>
+  </stage>
+  <stage stageid="856ba6be-c0d8-4c9d-b694-b73f26851c90" name="End" type="End">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>15</displayy>
+    <displaywidth>60</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <outputs>
+      <output type="collection" name="Data" narrative="Single row of data created from the parsed text" stage="Data" />
+      <output type="flag" name="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
+      <output type="text" name="Message" narrative="Output message for result of the action; primarily used for relaying exception message" stage="Message" />
+    </outputs>
+  </stage>
+  <stage stageid="3d9f5a20-cbd5-4a6c-aa76-822d85ce3a39" name="RecordText" type="Data">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-330</displayx>
+    <displayy>15</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="b4f7fdc2-65e9-4c58-9c73-a9789b645126" name="Data" type="Collection">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-330</displayx>
+    <displayy>90</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="2aa63a8b-7c69-4bc4-8564-a7842df22a9f" name="Parse Text" type="Code">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-150</displayx>
+    <displayy>-60</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>60</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="collection" name="columnDefinitions" expr="[ColumnDefinitions]" />
+      <input type="text" name="recordText" expr="[RecordText]" />
+    </inputs>
+    <outputs>
+      <output type="collection" name="data" stage="Data" />
+      <output type="flag" name="success" stage="Success" />
+      <output type="text" name="message" stage="Message" />
+    </outputs>
+    <onsuccess>856ba6be-c0d8-4c9d-b694-b73f26851c90</onsuccess>
+    <code><![CDATA[success = true;
+message = string.Empty;
+data = new DataTable();
+
+try
+{
+	// add a new column to the data for each of the inbound column definitions
+	for (int i = 0; i <= columnDefinitions.Rows.Count - 1; i++) {
+		data.Columns.Add(columnDefinitions.Rows[i]["Name"].ToString(), typeof(string));
+	}
+
+	// set up a new row for the data
+	DataRow row = data.NewRow();
+	int start = 0;
+	int length = 0;
+	for (int i = 0; i <= columnDefinitions.Rows.Count - 1; i++) {
+		// grab the column start position & length for the current column definition
+		// - subtract 1 from each "start" b/c Substring is a zero-based index
+		start = Convert.ToInt32(columnDefinitions.Rows[i]["StartPosition"].ToString()) - 1;
+		length = Convert.ToInt32(columnDefinitions.Rows[i]["Length"].ToString());
+		// parse the fixed width record text and store it in the appropriate data column in the new row
+		row[columnDefinitions.Rows[i]["Name"].ToString()] = recordText.Substring(start, length).Trim();
+	}
+	// add the new row to data
+	data.Rows.Add(row);
+	}
+catch (Exception ex)
+{
+	success = false;
+	message = ex.Message;
+	}
+]]></code>
+  </stage>
+  <stage stageid="d426303c-fe90-4309-8168-e2508c6a08d3" name="ColumnDefinitions" type="Collection">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-330</displayx>
+    <displayy>-15</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+    <collectioninfo>
+      <field name="Name" type="text" description="Column name" />
+      <field name="StartPosition" type="number" description="Starting position of the column" />
+      <field name="Length" type="number" description="Length of the column" />
+    </collectioninfo>
+  </stage>
+  <stage stageid="f3a57714-9ac7-434c-8a6b-992504d7391b" name="Success" type="Data">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-330</displayx>
+    <displayy>120</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>flag</datatype>
+    <initialvalue>False</initialvalue>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="e7622068-cc71-4293-8fc6-de6b070abbbd" name="Message" type="Data">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-330</displayx>
+    <displayy>150</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Tahoma" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="5f8d3ae1-1b9f-4149-bac4-a46ceb23adc3" name="Input Data Items" type="Block">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-420</displayx>
+    <displayy>-45</displayy>
+    <displaywidth>180</displaywidth>
+    <displayheight>90</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
+  </stage>
+  <stage stageid="dfa8e321-21b3-42ce-a9fd-caaf52ad0151" name="Output Data Items" type="Block">
+    <subsheetid>32cb28b8-a027-4236-ab5d-58664bb862a8</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-420</displayx>
+    <displayy>60</displayy>
+    <displaywidth>180</displaywidth>
+    <displayheight>120</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="800000" />
+  </stage>
+  <stage stageid="d958a6f8-891c-467a-89c9-9ac6d69661d0" name="Sum data Column" type="Code">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-240</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="collection" name="data" expr="[ColumnDefinitions]" />
+      <input type="text" name="columnToSum" expr="&quot;Length&quot;" />
+    </inputs>
+    <outputs>
+      <output type="number" name="sum" stage="Expected Record Length" />
+      <output type="flag" name="success" stage="Success" />
+      <output type="text" name="message" stage="Message" />
+    </outputs>
+    <onsuccess>d8f4fd51-dfb1-4d12-9aa9-d3aaea03c830</onsuccess>
+    <code><![CDATA[success = true;
+message = string.Empty;
+sum = 0;
+
+try
+{
+		sum = data.AsEnumerable().Sum(n => (decimal)n[columnToSum]);
+	}
+catch (Exception ex)
+{
+	success = false;
+	message = ex.Message;
+	}]]></code>
+  </stage>
+  <stage stageid="c66e1064-7ba8-41f0-8bf1-5c782083868f" name="Parse Fixed Width Record" type="SubSheet">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-30</displayy>
+    <displaywidth>90</displaywidth>
+    <displayheight>60</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="RecordText" friendlyname="RecordText" narrative="String containing all text from a given file record" expr="[FixedWidthRecords.Value]" />
+      <input type="collection" name="ColumnDefinitions" friendlyname="ColumnDefinitions" narrative="Collection of column definitions; including column name, start position, and length" expr="[ColumnDefinitions]" />
+    </inputs>
+    <outputs>
+      <output type="collection" name="Data" friendlyname="Data" narrative="Single row of data created from the parsed text" stage="Parsed Record" />
+      <output type="flag" name="Success" friendlyname="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
+      <output type="text" name="Message" friendlyname="Message" narrative="Output message for result of the action; primarily used for relaying exception message" stage="Message" />
+    </outputs>
+    <onsuccess>3ac145c6-a918-4251-bfee-d8010f246a43</onsuccess>
+    <processid>32cb28b8-a027-4236-ab5d-58664bb862a8</processid>
+  </stage>
+</process>
