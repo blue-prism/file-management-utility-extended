@@ -6,4 +6,4 @@ Common utility for file IO...extending the Blue Prism Utility - File Management 
 * Parse Fixed Width Record
   * Parse an input string/text based on a given record definition of field names, start positions, and lengths
 * Parse Fixed Width File to Collection
-  * Parse a collection of input strings/texts based on a given record definition of field names, start positions, and lengths
+  * Parse a fixed width file based on a given record definition of field names, start positions, and lengths
