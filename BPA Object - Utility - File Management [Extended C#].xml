@@ -34,7 +34,7 @@
   <subsheet subsheetid="32cb28b8-a027-4236-ab5d-58664bb862a8" type="Normal" published="True">
     <name>Parse Fixed Width Record</name>
     <view>
-      <camerax>-44</camerax>
+      <camerax>-140</camerax>
       <cameray>28</cameray>
       <zoom version="2">1.25</zoom>
     </view>
@@ -42,8 +42,8 @@
   <subsheet subsheetid="48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb" type="Normal" published="True">
     <name>Parse Fixed Width File To Collection</name>
     <view>
-      <camerax>-20</camerax>
-      <cameray>-76</cameray>
+      <camerax>-133</camerax>
+      <cameray>-118</cameray>
       <zoom version="2">1.25</zoom>
     </view>
   </subsheet>
@@ -206,7 +206,7 @@ You will not be able to call this action from a business process, nor will it be
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <narrative>This action takes in a collection of strings, each representing a fixed-width record/line from a flat file. It also takes in a collection of column definitions (including name, start position, and length). Each record is parsed by calling the "Parse Fixed Width Record" action and subsequently added to a collection of parsed data to be returned to the caller.</narrative>
     <displayx>-345</displayx>
-    <displayy>-270</displayy>
+    <displayy>-375</displayy>
     <displaywidth>210</displaywidth>
     <displayheight>90</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
@@ -217,15 +217,15 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-105</displayx>
-    <displayy>-300</displayy>
+    <displayy>-405</displayy>
     <displaywidth>60</displaywidth>
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
     <inputs>
       <input type="collection" name="ColumnDefinitions" narrative="Collection of column definitions; including column name, start position, and length" stage="ColumnDefinitions" />
-      <input type="collection" name="FixedWidthRecords" narrative="Collection of fixed width text records" stage="FixedWidthRecords" />
+      <input type="text" name="FilePath" narrative="Full path, including file name, of file to be parsed." stage="FilePath" />
     </inputs>
-    <onsuccess>d958a6f8-891c-467a-89c9-9ac6d69661d0</onsuccess>
+    <onsuccess>17de5335-702d-467c-9dd0-748bd85d4810</onsuccess>
   </stage>
   <stage stageid="5dce49aa-ab48-4618-9e02-1d3a9c7120ee" name="End" type="End">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
@@ -249,7 +249,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>30</displayy>
+    <displayy>-15</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
@@ -262,7 +262,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>-180</displayy>
+    <displayy>-285</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
@@ -281,7 +281,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>60</displayy>
+    <displayy>15</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Tahoma" size="10" style="Regular" color="000000" />
@@ -296,7 +296,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>90</displayy>
+    <displayy>45</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Tahoma" size="10" style="Regular" color="000000" />
@@ -307,8 +307,7 @@ You will not be able to call this action from a business process, nor will it be
   </stage>
   <stage stageid="a32392c4-5498-4e1c-8dad-e9a2bea4cfd3" name="FixedWidthRecords" type="Collection">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
-    <narrative>
-    </narrative>
+    <narrative>Collection of fixed width text records</narrative>
     <displayx>-345</displayx>
     <displayy>-150</displayy>
     <displaywidth>150</displaywidth>
@@ -392,7 +391,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>-45</displayy>
+    <displayy>-90</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
@@ -445,7 +444,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-345</displayx>
-    <displayy>-75</displayy>
+    <displayy>-120</displayy>
     <displaywidth>150</displaywidth>
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
@@ -528,7 +527,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-450</displayx>
-    <displayy>-210</displayy>
+    <displayy>-315</displayy>
     <displaywidth>210</displaywidth>
     <displayheight>90</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
@@ -539,7 +538,7 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-450</displayx>
-    <displayy>0</displayy>
+    <displayy>-45</displayy>
     <displaywidth>210</displaywidth>
     <displayheight>120</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="800000" />
@@ -550,9 +549,9 @@ You will not be able to call this action from a business process, nor will it be
     <narrative>
     </narrative>
     <displayx>-450</displayx>
-    <displayy>-105</displayy>
+    <displayy>-210</displayy>
     <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
+    <displayheight>150</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="339966" />
   </stage>
   <stage stageid="15e24bc9-9970-4018-9c1a-8cefdabdfbcd" name="Delete Files" type="SubSheetInfo">
@@ -1010,5 +1009,73 @@ catch (Exception ex)
     </outputs>
     <onsuccess>3ac145c6-a918-4251-bfee-d8010f246a43</onsuccess>
     <processid>32cb28b8-a027-4236-ab5d-58664bb862a8</processid>
+  </stage>
+  <stage stageid="17de5335-702d-467c-9dd0-748bd85d4810" name="Read All Text from Fixed Width File" type="Action">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit onsuccess="true" />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-345</displayy>
+    <displaywidth>120</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="File Name" friendlyname="File Name" narrative="The full path the file to read the text from" expr="" />
+    </inputs>
+    <outputs>
+      <output type="flag" name="Success" friendlyname="Success" narrative="True if successful" stage="Success" />
+      <output type="text" name="Message" friendlyname="Message" narrative="An error message if unsuccessful" stage="Message" />
+      <output type="text" name="Text" friendlyname="Text" narrative="The text of the file" stage="File Raw Text" />
+    </outputs>
+    <onsuccess>364426ae-eed5-47e2-98b1-a33805d87ae0</onsuccess>
+    <resource object="Utility - File Management" action="Read All Text from File" />
+  </stage>
+  <stage stageid="c0d0cce9-8a39-40d0-a494-e717d1f1459d" name="File Raw Text" type="Data">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-180</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="d6aba62c-491f-4a01-bc3e-ccd0afa719ce" name="FilePath" type="Data">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <narrative>
+    </narrative>
+    <displayx>-345</displayx>
+    <displayy>-255</displayy>
+    <displaywidth>150</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="364426ae-eed5-47e2-98b1-a33805d87ae0" name="Split File Raw Text into Collection" type="Action">
+    <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
+    <loginhibit onsuccess="true" />
+    <narrative>
+    </narrative>
+    <displayx>-105</displayx>
+    <displayy>-300</displayy>
+    <displaywidth>120</displaywidth>
+    <displayheight>30</displayheight>
+    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <inputs>
+      <input type="text" name="Text to Split" friendlyname="Text to Split" narrative="The text to split" expr="[File Raw Text]" />
+    </inputs>
+    <outputs>
+      <output type="collection" name="Split Values" friendlyname="Split Values" narrative="The resulting collection containing the split values" stage="FixedWidthRecords" />
+    </outputs>
+    <onsuccess>d958a6f8-891c-467a-89c9-9ac6d69661d0</onsuccess>
+    <resource object="Utility - Strings" action="Split Lines" />
   </stage>
 </process>
