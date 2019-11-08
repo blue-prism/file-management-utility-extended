@@ -483,7 +483,7 @@ catch (Exception ex)
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
     <datatype>number</datatype>
-    <initialvalue />
+    <initialvalue>180</initialvalue>
     <private />
     <alwaysinit />
   </stage>
@@ -497,7 +497,7 @@ catch (Exception ex)
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
     <datatype>text</datatype>
-    <initialvalue />
+    <initialvalue xml:space="preserve">*.*</initialvalue>
     <private />
     <alwaysinit />
   </stage>
@@ -511,7 +511,7 @@ catch (Exception ex)
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
     <datatype>flag</datatype>
-    <initialvalue />
+    <initialvalue>True</initialvalue>
     <private />
     <alwaysinit />
   </stage>
@@ -525,7 +525,7 @@ catch (Exception ex)
     <displayheight>30</displayheight>
     <font family="Segoe UI" size="10" style="Regular" color="000000" />
     <datatype>flag</datatype>
-    <initialvalue />
+    <initialvalue>False</initialvalue>
     <private />
     <alwaysinit />
   </stage>
