@@ -1,4 +1,4 @@
-﻿<process name="Utility - File Management [Extended C#]" version="1.0" bpversion="6.5.1.14401" narrative="Common utility for file IO...extending the Blue Prism Utility - File Management object" byrefcollection="true" type="object" runmode="Background" preferredid="7fef2eac-105b-4fba-8764-00a74c21733f">
+﻿<process name="Utility - File Management [Extended C#]" version="1.0" bpversion="6.7.0.20116" narrative="Common utility for file IO...exposing actions not accommodated by the Blue Prism Utility - File Management object" byrefcollection="true" type="object" runmode="Background" preferredid="7fef2eac-105b-4fba-8764-00a74c21733f">
   <appdef>
     <element name="Application Root">
       <id>82c11407-43d1-4639-bb1a-7daf951945d4</id>
@@ -9,8 +9,8 @@
     </element>
   </appdef>
   <view>
-    <camerax>0</camerax>
-    <cameray>21</cameray>
+    <camerax>-299</camerax>
+    <cameray>126</cameray>
     <zoom version="2">1.25</zoom>
   </view>
   <preconditions />
@@ -31,6 +31,22 @@
       <zoom version="2">1.25</zoom>
     </view>
   </subsheet>
+  <subsheet subsheetid="7e6b9551-f415-4824-beb0-91101542c8f9" type="Normal" published="True">
+    <name>Download File As Binary</name>
+    <view>
+      <camerax>0</camerax>
+      <cameray>42</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
+  <subsheet subsheetid="242d54ac-22d9-4986-b4b1-6d4ea8b63f18" type="Normal" published="True">
+    <name>Download File to Disk</name>
+    <view>
+      <camerax>0</camerax>
+      <cameray>63</cameray>
+      <zoom version="2">1.25</zoom>
+    </view>
+  </subsheet>
   <subsheet subsheetid="48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb" type="Normal" published="True">
     <name>Parse Fixed Width File To Collection</name>
     <view>
@@ -41,33 +57,15 @@
   </subsheet>
   <stage stageid="c0469860-e031-4bf3-89be-88cfa087b4b2" name="Start" type="Start">
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-60</displayx>
-    <displayy>-45</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-60" y="-45" />
     <onsuccess>ff2959d1-effe-4057-83f7-ce9f48600e98</onsuccess>
   </stage>
   <stage stageid="ff2959d1-effe-4057-83f7-ce9f48600e98" name="End" type="End">
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-60</displayx>
-    <displayy>45</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-60" y="45" />
   </stage>
   <stage stageid="44c107de-1a51-499a-bf09-70ad27bb7ef9" name="Stage1" type="ProcessInfo">
-    <narrative>
-    </narrative>
-    <displayx>-240</displayx>
-    <displayy>-15</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-240" y="-15" w="210" h="90" />
     <references>
       <reference>System.Data.dll</reference>
       <reference>System.Xml.dll</reference>
@@ -77,6 +75,8 @@
       <reference>System.dll</reference>
       <reference>System.Core.dll</reference>
       <reference>Microsoft.VisualBasic.dll</reference>
+      <reference>Newtonsoft.Json.dll</reference>
+      <reference>System.Net.Http.dll</reference>
     </references>
     <imports>
       <import>System</import>
@@ -87,6 +87,10 @@
       <import>System.Text</import>
       <import>System.Collections.Generic</import>
       <import>Microsoft.VisualBasic.FileIO</import>
+      <import>Newtonsoft.Json</import>
+      <import>System.Net</import>
+      <import>System.Net.Http</import>
+      <import>System.Net.Http.Headers</import>
     </imports>
     <language>csharp</language>
     <globalcode><![CDATA[]]></globalcode>
@@ -132,40 +136,72 @@ public void DeleteFiles(string path, string pattern, int numberOfDays, bool remo
 	if (removeEmptyDirectories && Directory.GetFileSystemEntries(path).Length == 0)
 		Directory.Delete(path);
 }
+
+public DataColumn[] GetResponseHeaderColumns()
+{
+	return new DataColumn[]
+		{
+			new DataColumn("Header", typeof(string)),
+			new DataColumn("Value", typeof(string))
+		};
+}
+
+public void LoadWebResponseHeaders(DataTable responseHeaders, HttpResponseMessage responseMessage)
+{
+	// add required columns to responseHeaders DataTable
+	responseHeaders.Columns.AddRange(GetResponseHeaderColumns());
+	
+	// iterate over the headers from the web response and add each to the responseHeaders DataTable
+	foreach (var k in responseMessage.Headers)
+	{
+		DataRow r = responseHeaders.NewRow();
+		r["Header"] = k.Key;
+			if (k.Value.GetType() == typeof(String[]))
+				r["Value"] = string.Join(", ", k.Value);
+			else
+				r["Value"] = k.Value;
+		responseHeaders.Rows.Add(r);
+	}
+}
+
+public void ParseWebExceptionDetails(WebException wex, out string httpStatusCode, out DataTable responseHeaders, out string responseContent)
+{
+	// grab the http status code
+	httpStatusCode = string.Format("{0} - {1}", ((int)((HttpWebResponse)wex.Response).StatusCode).ToString(), ((HttpWebResponse)wex.Response).StatusDescription);
+
+	// load up the responseHeaders
+	responseHeaders = new DataTable();
+	responseHeaders.Columns.AddRange(GetResponseHeaderColumns());
+	foreach (string k in wex.Response.Headers.Keys)
+	{
+		DataRow row = responseHeaders.NewRow();
+		row["Header"] = k;
+		row["Value"] = wex.Response.Headers.Get(k);
+		responseHeaders.Rows.Add(row);
+	}
+
+	using (var sr = new StreamReader(wex.Response.GetResponseStream()))
+	{
+		// read in the response stream
+		responseContent = sr.ReadToEnd();
+	}
+}
 ]]></code>
   </stage>
   <stage stageid="d33b7926-05fb-4420-8231-032294e6e98d" name="Clean Up" type="SubSheetInfo">
     <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-240</displayx>
-    <displayy>-15</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-240" y="-15" w="210" h="90" />
   </stage>
   <stage stageid="2f61bc43-605d-4332-903d-7c237b093568" name="Start" type="Start">
     <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-60</displayx>
-    <displayy>-45</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-60" y="-45" />
     <onsuccess>ecf1aa99-20a1-4e2d-9927-94f5777044c3</onsuccess>
   </stage>
   <stage stageid="ecf1aa99-20a1-4e2d-9927-94f5777044c3" name="End" type="End">
     <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-60</displayx>
-    <displayy>60</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-60" y="60" />
   </stage>
   <stage stageid="cd49a2e9-2b67-4165-a239-dc0aaddfe14f" name="Note1" type="Note">
     <subsheetid>332fe361-2dce-4907-8aea-27a336807b25</subsheetid>
@@ -176,11 +212,7 @@ This is an optional page where you might choose to perform some finalisation (or
 The cleanup action will be called automatically immediately after closing your business object at the end of a business process.
 
 You will not be able to call this action from a business process, nor will it be called at any other time than before the disposal of the business object.</narrative>
-    <displayx>-240</displayx>
-    <displayy>135</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>180</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-240" y="135" w="210" h="180" />
   </stage>
   <stage stageid="8a8eb31e-077f-46a5-a0f4-0e504d174401" name="Note2" type="Note">
     <narrative>Initialise Page
@@ -190,31 +222,17 @@ This is an optional page where you might choose to perform some initialisation t
 The initialise action will be called automatically immediately after loading your business object.
 
 You will not be able to call this action from a business process, nor will it be called at any other time than after the creation of the object.</narrative>
-    <displayx>-240</displayx>
-    <displayy>120</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>150</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-240" y="120" w="210" h="150" />
   </stage>
   <stage stageid="b529d184-6390-42c5-966b-6bc0cc7651e8" name="Parse Fixed Width File To Collection" type="SubSheetInfo">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <narrative>This action takes in a collection of strings, each representing a fixed-width record/line from a flat file. It also takes in a collection of column definitions (including name, start position, and length). Each record is parsed by calling the "Parse Fixed Width Record" action and subsequently added to a collection of parsed data to be returned to the caller.</narrative>
-    <displayx>-345</displayx>
-    <displayy>-375</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="-375" w="210" h="90" />
   </stage>
   <stage stageid="9536b5ba-7b3e-4082-a7ff-426e017ff3a5" name="Start" type="Start">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-105</displayx>
-    <displayy>-405</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-105" y="-405" />
     <inputs>
       <input type="collection" name="ColumnDefinitions" narrative="Collection of column definitions; including column name, start position, and length" stage="ColumnDefinitions" />
       <input type="text" name="FilePath" narrative="Full path, including file name, of file to be parsed." stage="FilePath" />
@@ -224,13 +242,7 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="5dce49aa-ab48-4618-9e02-1d3a9c7120ee" name="End" type="End">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-105</displayx>
-    <displayy>-255</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-105" y="-255" />
     <outputs>
       <output type="collection" name="Data" narrative="Collection of records from the parsed text of the inbound fixed width collection" stage="Data" />
       <output type="flag" name="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
@@ -240,26 +252,14 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="ec3ead03-b401-47bf-887b-54c437d6ce99" name="Data" type="Collection">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>-180</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="-180" w="150" h="30" />
     <datatype>collection</datatype>
     <private />
     <alwaysinit />
   </stage>
   <stage stageid="484efa86-191c-42c2-8064-0367439ded18" name="ColumnDefinitions" type="Collection">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>-285</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="-285" w="150" h="30" />
     <datatype>collection</datatype>
     <private />
     <alwaysinit />
@@ -272,12 +272,7 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="f291b290-36fd-45a7-9e7f-f5ae56a589a2" name="Success" type="Data">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>-150</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
+    <display x="-345" y="-150" w="150" h="30" />
     <font family="Tahoma" size="10" style="Regular" color="000000" />
     <datatype>flag</datatype>
     <initialvalue>False</initialvalue>
@@ -287,12 +282,7 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="1ab72d58-b3ec-42b4-bb49-bca0d7229ad1" name="Message" type="Data">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>-120</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
+    <display x="-345" y="-120" w="150" h="30" />
     <font family="Tahoma" size="10" style="Regular" color="000000" />
     <datatype>text</datatype>
     <initialvalue />
@@ -302,44 +292,24 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="1ba7e3e9-bd21-4e92-8cac-fd93d3aaa593" name="Input Data Items" type="Block">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-450</displayx>
-    <displayy>-315</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
+    <display x="-450" y="-315" w="210" h="90" />
     <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
   </stage>
   <stage stageid="db75cfa4-4be5-4da2-b513-259fa3efdb67" name="Output Data Items" type="Block">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-450</displayx>
-    <displayy>-210</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>120</displayheight>
+    <display x="-450" y="-210" w="210" h="120" />
     <font family="Segoe UI" size="10" style="Regular" color="800000" />
   </stage>
   <stage stageid="15e24bc9-9970-4018-9c1a-8cefdabdfbcd" name="Delete Files" type="SubSheetInfo">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <narrative>This action takes in a single folder path, a file extension pattern, and a number of days. It uses that data to delete all files that meet the file extension pattern and are older than the number of days. And then traverses all nested sub folders recursively to delete files in the same manner.</narrative>
-    <displayx>-345</displayx>
-    <displayy>-90</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="-90" w="210" h="90" />
   </stage>
   <stage stageid="d4e6ba50-b525-4cba-8185-806249e36ba7" name="End" type="End">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-150</displayx>
-    <displayy>30</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-150" y="30" />
     <outputs>
       <output type="flag" name="Success" narrative="Flag to indicate success/failure of the action" stage="Success" />
       <output type="text" name="Message" narrative="Output message for result of the action; primarily used for relaying exception message" stage="Message" />
@@ -348,13 +318,7 @@ You will not be able to call this action from a business process, nor will it be
   <stage stageid="68ad89d7-8cb9-4237-800e-0ef452413c0c" name="Delete Files" type="Code">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-150</displayx>
-    <displayy>-45</displayy>
-    <displaywidth>90</displaywidth>
-    <displayheight>60</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-150" y="-45" w="90" h="60" />
     <inputs>
       <input type="text" name="startPath" expr="[File Path]" />
       <input type="text" name="pattern" expr="[File Extension Pattern]" />
@@ -387,12 +351,7 @@ catch (Exception ex)
   <stage stageid="788a9601-6b8e-4453-90d8-d8238d9e88f3" name="Success" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>195</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
+    <display x="-345" y="195" w="150" h="30" />
     <font family="Tahoma" size="10" style="Regular" color="000000" />
     <datatype>flag</datatype>
     <initialvalue>False</initialvalue>
@@ -402,12 +361,7 @@ catch (Exception ex)
   <stage stageid="8a2be339-bc5d-4f2e-a0a5-0594437e578f" name="Message" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>225</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
+    <display x="-345" y="225" w="150" h="30" />
     <font family="Tahoma" size="10" style="Regular" color="000000" />
     <datatype>text</datatype>
     <initialvalue />
@@ -417,23 +371,13 @@ catch (Exception ex)
   <stage stageid="ba11d951-85f3-4ad4-a60f-988de466a7f7" name="Input Data Items" type="Block">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-450</displayx>
-    <displayy>-30</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>180</displayheight>
+    <display x="-450" y="-30" w="210" h="180" />
     <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
   </stage>
   <stage stageid="9dc30f7f-dcda-46a1-bd9c-078e6f31317f" name="Output Data Items" type="Block">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-450</displayx>
-    <displayy>165</displayy>
-    <displaywidth>210</displaywidth>
-    <displayheight>90</displayheight>
+    <display x="-450" y="165" w="210" h="90" />
     <font family="Segoe UI" size="10" style="Regular" color="800000" />
   </stage>
   <stage stageid="b3fbf6ae-846a-4253-88b2-b8222e097f60" name="Start" type="Start">
@@ -443,13 +387,7 @@ catch (Exception ex)
       <condition narrative="The file extension pattern must be a valid string pattern (For example: *.*  or  *.csv; etc.). Multiple patterns may be used but must be comma delimited (For example: *.csv,*.txt)." />
       <condition narrative="The number of days must a valid number." />
     </preconditions>
-    <narrative>
-    </narrative>
-    <displayx>-150</displayx>
-    <displayy>-120</displayy>
-    <displaywidth>60</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-150" y="-120" />
     <inputs>
       <input type="text" name="File Path" stage="File Path" />
       <input type="number" name="Number of Days" stage="Number of Days" />
@@ -461,13 +399,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="6dc825ab-9c3a-4f32-88bd-6ec986491e66" name="File Path" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>0</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="0" w="150" h="30" />
     <datatype>text</datatype>
     <initialvalue />
     <private />
@@ -475,13 +407,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="8c678857-124d-489f-a2ca-2917a7517452" name="Number of Days" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>30</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="30" w="150" h="30" />
     <datatype>number</datatype>
     <initialvalue>180</initialvalue>
     <private />
@@ -489,13 +415,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="541f447f-918b-447b-b06c-694c41b292e3" name="File Extension Pattern" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>60</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="60" w="150" h="30" />
     <datatype>text</datatype>
     <initialvalue xml:space="preserve">*.*</initialvalue>
     <private />
@@ -503,13 +423,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="fda69089-bcc5-4e6d-ad8b-d6afa3618804" name="Remove Empty Directories" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>90</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="90" w="150" h="30" />
     <datatype>flag</datatype>
     <initialvalue>True</initialvalue>
     <private />
@@ -517,13 +431,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="35c85f44-d2d7-4304-b82f-9412d2700c91" name="Recursively Delete In Subfolders" type="Data">
     <subsheetid>bdfff7c5-0f75-410d-bc08-773a9a069e42</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>120</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="120" w="150" h="30" />
     <datatype>flag</datatype>
     <initialvalue>False</initialvalue>
     <private />
@@ -531,13 +439,7 @@ catch (Exception ex)
   </stage>
   <stage stageid="d6aba62c-491f-4a01-bc3e-ccd0afa719ce" name="FilePath" type="Data">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
-    <narrative>
-    </narrative>
-    <displayx>-345</displayx>
-    <displayy>-255</displayy>
-    <displaywidth>150</displaywidth>
-    <displayheight>30</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-345" y="-255" w="150" h="30" />
     <datatype>text</datatype>
     <initialvalue />
     <private />
@@ -546,13 +448,7 @@ catch (Exception ex)
   <stage stageid="e384132d-7c74-48ee-b2a2-027cbe6aa350" name="Parse Fixed Width File" type="Code">
     <subsheetid>48d3a4f8-7bfe-4634-b7c5-ab28c5860fbb</subsheetid>
     <loginhibit />
-    <narrative>
-    </narrative>
-    <displayx>-105</displayx>
-    <displayy>-330</displayy>
-    <displaywidth>120</displaywidth>
-    <displayheight>60</displayheight>
-    <font family="Segoe UI" size="10" style="Regular" color="000000" />
+    <display x="-105" y="-330" w="120" h="60" />
     <inputs>
       <input type="text" name="filePath" expr="[FilePath]" />
       <input type="collection" name="columnDefinitions" expr="[ColumnDefinitions]" />
@@ -615,5 +511,388 @@ catch (Exception ex)
 	message = ex.Message;
 }
 ]]></code>
+  </stage>
+  <stage stageid="e5380d69-9a77-49a7-bb72-789f8d5a9319" name="Download File to Disk" type="SubSheetInfo">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <narrative>Download a file from the provided url and save it to the give folder path.</narrative>
+    <display x="-195" y="-105" w="150" h="90" />
+  </stage>
+  <stage stageid="6cc2fe16-94e1-4b0f-8d89-f65c4db68e80" name="Download File To Disk" type="Code">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <loginhibit />
+    <display x="15" y="-60" w="120" h="60" />
+    <inputs>
+      <input type="collection" name="httpRequestHeaders" expr="[HTTP Request Headers]" />
+      <input type="text" name="downloadUrl" expr="[Download Url]" />
+      <input type="text" name="folderPath" expr="[Folder Path]" />
+    </inputs>
+    <outputs>
+      <output type="flag" name="success" stage="Success" />
+      <output type="text" name="result" stage="Result" />
+      <output type="text" name="fileName" stage="File Name" />
+      <output type="text" name="httpStatusCode" stage="HTTP Status Code" />
+      <output type="collection" name="responseHeaders" stage="Response Headers" />
+      <output type="text" name="responseContent" stage="Response Content" />
+    </outputs>
+    <onsuccess>a5ba5795-44eb-4839-a24a-877dcec2cd81</onsuccess>
+    <code><![CDATA[success = true;
+result = string.Empty;
+fileName = string.Empty;
+responseHeaders = new DataTable();
+httpStatusCode = string.Empty;
+responseContent = string.Empty;
+
+try
+{
+	// init requestMessage
+	HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+	foreach (DataRow row in httpRequestHeaders.Rows)
+	{
+		requestMessage.Headers.Add(row["Name"].ToString(), row["Value"].ToString());
+	}
+
+	// set up client handler
+	HttpClientHandler handler = new HttpClientHandler();
+	handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+	using (var client = new HttpClient(handler, true))
+	{
+		// execute the request
+		HttpResponseMessage responseMessage = client.SendAsync(requestMessage).Result;
+
+		// load up the status code and response headers
+		httpStatusCode = string.Format("{0} - {1}", ((int)responseMessage.StatusCode).ToString(), responseMessage.StatusCode.ToString());
+		LoadWebResponseHeaders(responseHeaders, responseMessage);
+
+		// strip trailing slash if exists
+		if (folderPath.EndsWith(@"\"))
+			folderPath.Substring(0, folderPath.Length - 1);
+		
+		// get the file name
+		fileName = string.Format(@"{0}\{1}", folderPath, responseMessage.Content.Headers.ContentDisposition.FileNameStar);
+
+		// read the file bytes and write to disk
+		byte[] bytes = responseMessage.Content.ReadAsByteArrayAsync().Result;
+		File.WriteAllBytes(fileName, bytes);
+	}
+}
+catch (WebException wex)
+{
+	result += wex.Message;
+	success = false;
+
+	ParseWebExceptionDetails(wex, out httpStatusCode, out responseHeaders, out responseContent);
+}
+catch (Exception ex)
+{
+	result += ex.Message;
+	success = false;
+}]]></code>
+  </stage>
+  <stage stageid="acf455e6-098c-4fcc-bfba-fe7cb922ffbe" name="Input Data Items" type="Block">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <loginhibit />
+    <display x="-270" y="-45" w="150" h="120" />
+    <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
+  </stage>
+  <stage stageid="6e999dd1-0d40-4c52-a2e4-cc65f5d04584" name="Download Url" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="-15" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="fd594822-5851-4e7e-84ad-eebcb1c741d1" name="Folder Path" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="15" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="22b24a63-cd82-40f0-810b-a364cc0f57a6" name="Start" type="Start">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <loginhibit />
+    <display x="15" y="-135" />
+    <inputs>
+      <input type="text" name="Download Url" narrative="The download url of the file to be retrieved" stage="Download Url" />
+      <input type="text" name="Folder Path" narrative="File save location" stage="Folder Path" />
+      <input type="collection" name="HTTP Request Headers" narrative="Headers required for the HTTP request to download the file" stage="HTTP Request Headers" />
+    </inputs>
+    <onsuccess>6cc2fe16-94e1-4b0f-8d89-f65c4db68e80</onsuccess>
+  </stage>
+  <stage stageid="a5ba5795-44eb-4839-a24a-877dcec2cd81" name="End" type="End">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <loginhibit />
+    <display x="15" y="15" />
+    <outputs>
+      <output type="flag" name="Success" narrative="Flag indicating success/failure of operation" stage="Success" />
+      <output type="text" name="Result" narrative="Message regarding outcome of operation. Will be empty if successful and populated if failed." stage="Result" />
+      <output type="text" name="Response Content" narrative="Content of the API execution response." stage="Response Content" />
+      <output type="text" name="HTTP Status Code" narrative="The HTTP Status Code of the API execution response." stage="HTTP Status Code" />
+      <output type="collection" name="Response Headers" narrative="Response headers of the API execution response." stage="Response Headers" />
+      <output type="text" name="File Name" narrative="Name of the downloaded file" stage="File Name" />
+    </outputs>
+  </stage>
+  <stage stageid="3436fdcb-19ad-4026-91d8-369f63b88307" name="Output Data Items" type="Block">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <loginhibit />
+    <display x="-270" y="90" w="150" h="210" />
+    <font family="Segoe UI" size="10" style="Regular" color="800000" />
+  </stage>
+  <stage stageid="1d12ccfe-c78d-44c4-9d6d-28377ba218c9" name="HTTP Status Code" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="210" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="4fbbbf7d-6385-4c57-8187-12de0cdfd017" name="Response Headers" type="Collection">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="240" w="120" h="30" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="9785aa56-fe70-4980-a80a-d275b9f956eb" name="Success" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="120" w="120" h="30" />
+    <datatype>flag</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="2525f591-69ab-4638-8a6d-991ff9bf87a6" name="Result" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="150" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="fa669a0e-2516-452b-a767-e5df386c2f28" name="Response Content" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="180" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="357e1456-93aa-4dd9-9aaf-dec86ee73bb7" name="File Name" type="Data">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="270" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="c85b5c1d-db51-4203-9bdb-0158f74dbe44" name="Download File As Binary" type="SubSheetInfo">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <narrative>Download a file from the provided url and return it to the caller as a binary file.</narrative>
+    <display x="-195" y="-105" w="150" h="90" />
+  </stage>
+  <stage stageid="acbdca10-cbd7-477d-9911-f32516e6cdc7" name="Download File As Binary" type="Code">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="15" y="-60" w="120" h="60" />
+    <inputs>
+      <input type="collection" name="httpRequestHeaders" expr="[HTTP Request Headers]" />
+      <input type="text" name="downloadUrl" expr="[Download Url]" />
+    </inputs>
+    <outputs>
+      <output type="flag" name="success" stage="Success" />
+      <output type="text" name="result" stage="Result" />
+      <output type="text" name="fileName" stage="File Name" />
+      <output type="text" name="httpStatusCode" stage="HTTP Status Code" />
+      <output type="collection" name="responseHeaders" stage="Response Headers" />
+      <output type="text" name="responseContent" stage="Response Content" />
+      <output type="binary" name="downloadedFile" stage="Downloaded File" />
+    </outputs>
+    <onsuccess>f5b2f091-ab6b-428e-b369-96433dfeece0</onsuccess>
+    <code><![CDATA[success = true;
+result = string.Empty;
+fileName = string.Empty;
+responseHeaders = new DataTable();
+httpStatusCode = string.Empty;
+responseContent = string.Empty;
+downloadedFile = null;
+
+try
+{
+	// init requestMessage
+	HttpRequestMessage requestMessage = new HttpRequestMessage(HttpMethod.Get, downloadUrl);
+	foreach (DataRow row in httpRequestHeaders.Rows)
+	{
+		requestMessage.Headers.Add(row["Name"].ToString(), row["Value"].ToString());
+	}
+
+	// set up client handler
+	HttpClientHandler handler = new HttpClientHandler();
+	handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+	using (var client = new HttpClient(handler, true))
+	{
+		// execute the request
+		HttpResponseMessage responseMessage = client.SendAsync(requestMessage).Result;
+
+		// load up the status code and response headers
+		httpStatusCode = string.Format("{0} - {1}", ((int)responseMessage.StatusCode).ToString(), responseMessage.StatusCode.ToString());
+		LoadWebResponseHeaders(responseHeaders, responseMessage);
+
+		// get the file name
+		fileName = responseMessage.Content.Headers.ContentDisposition.FileNameStar;
+
+		// read the file bytes and write to disk
+		downloadedFile = responseMessage.Content.ReadAsByteArrayAsync().Result;
+	}
+}
+catch (WebException wex)
+{
+	result += wex.Message;
+	success = false;
+
+	ParseWebExceptionDetails(wex, out httpStatusCode, out responseHeaders, out responseContent);
+}
+catch (Exception ex)
+{
+	result += ex.Message;
+	success = false;
+}]]></code>
+  </stage>
+  <stage stageid="adf36382-4ad3-4019-9221-48937723177f" name="Input Data Items" type="Block">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="-270" y="-45" w="150" h="90" />
+    <font family="Segoe UI" size="10" style="Regular" color="FFCC00" />
+  </stage>
+  <stage stageid="18dc1dda-0a3f-4eac-9ab8-97fd98e07c51" name="Download Url" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="-15" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="5d36817a-8d16-4c2d-a30f-5fe0e9d6a08b" name="Start" type="Start">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="15" y="-135" />
+    <inputs>
+      <input type="text" name="Download Url" narrative="The download url of the file to be retrieved" stage="Download Url" />
+      <input type="collection" name="HTTP Request Headers" narrative="Headers required for the HTTP request to download the file" stage="HTTP Request Headers" />
+    </inputs>
+    <onsuccess>acbdca10-cbd7-477d-9911-f32516e6cdc7</onsuccess>
+  </stage>
+  <stage stageid="f5b2f091-ab6b-428e-b369-96433dfeece0" name="End" type="End">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="15" y="15" />
+    <outputs>
+      <output type="flag" name="Success" narrative="Flag indicating success/failure of operation" stage="Success" />
+      <output type="text" name="Result" narrative="Message regarding outcome of operation. Will be empty if successful and populated if failed." stage="Result" />
+      <output type="text" name="Response Content" narrative="Content of the API execution response." stage="Response Content" />
+      <output type="text" name="HTTP Status Code" narrative="The HTTP Status Code of the API execution response." stage="HTTP Status Code" />
+      <output type="collection" name="Response Headers" narrative="Response headers of the API execution response." stage="Response Headers" />
+      <output type="text" name="File Name" narrative="Name of the downloaded file" stage="File Name" />
+      <output type="binary" name="Downloaded File" narrative="The downloaded file in binary format" stage="Downloaded File" />
+    </outputs>
+  </stage>
+  <stage stageid="577d775a-cdcf-4d3c-b787-fde6bd9d44b2" name="Output Data Items" type="Block">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="-270" y="60" w="150" h="240" />
+    <font family="Segoe UI" size="10" style="Regular" color="800000" />
+  </stage>
+  <stage stageid="0f8ef79a-3e92-485b-b882-41c9c2a25bc7" name="HTTP Status Code" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="180" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="ac0dbeff-e250-489d-ac77-1a13d7373473" name="Response Headers" type="Collection">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="210" w="120" h="30" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="a6cca5dc-cb64-4cf7-8520-f4d8e53665f9" name="Success" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="90" w="120" h="30" />
+    <datatype>flag</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="1655c375-a23f-4c24-85ec-3545267448cb" name="Result" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="120" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="8a739f63-d676-4d79-a5dc-a4edee9fb506" name="File Name" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="240" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="0331cf71-f79a-4fb1-a253-b2e9055a7552" name="HTTP Request Headers" type="Collection">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="15" w="120" h="30" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+    <collectioninfo>
+      <field name="Name" type="text" />
+      <field name="Value" type="text" />
+    </collectioninfo>
+  </stage>
+  <stage stageid="6d6fd5ca-ae47-40c1-88f1-2b942ca6ce72" name="Downloaded File" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <loginhibit />
+    <display x="-195" y="270" w="120" h="30" />
+    <datatype>binary</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="3391672c-d453-4260-9060-ffd0ed6f575e" name="Response Content" type="Data">
+    <subsheetid>7e6b9551-f415-4824-beb0-91101542c8f9</subsheetid>
+    <display x="-195" y="150" w="120" h="30" />
+    <datatype>text</datatype>
+    <initialvalue />
+    <private />
+    <alwaysinit />
+  </stage>
+  <stage stageid="d105fa45-0f37-43c2-8f8e-c26769f5b8d3" name="Blue Prism Limited Copyright Note" type="Note">
+    <loginhibit />
+    <narrative>'The MIT License'
+
+© 2019 - 2020 Blue Prism Limited
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE</narrative>
+    <display x="-585" y="45" w="450" h="210" />
+    <font family="Segoe UI" size="10" style="Bold" color="000000" />
+  </stage>
+  <stage stageid="65110d41-fa69-4b20-83d3-3f75a7b5f2c6" name="HTTP Request Headers" type="Collection">
+    <subsheetid>242d54ac-22d9-4986-b4b1-6d4ea8b63f18</subsheetid>
+    <display x="-195" y="45" w="120" h="30" />
+    <datatype>collection</datatype>
+    <private />
+    <alwaysinit />
+    <collectioninfo>
+      <field name="Name" type="text" />
+      <field name="Value" type="text" />
+    </collectioninfo>
   </stage>
 </process>
