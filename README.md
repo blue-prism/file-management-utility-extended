@@ -13,3 +13,6 @@ Common utility for file IO...exposing actions not accommodated by the Blue Prism
 
 ## Language
 * All code stages written in **C#**
+
+## Help
+For more detailed information, please refer to the [Wiki](https://github.com/blue-prism/file-management-utility-extended/wiki)
